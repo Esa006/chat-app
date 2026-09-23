@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { messagesApi } from '../api/messages';
 import { useEcho } from '../context/EchoContext';
+import { useAuth } from '../context/AuthContext';
+import { showDesktopNotification } from '../utils/notifications';
 import type { Message } from '../types';
 
 interface UseMessagesOptions {
@@ -15,6 +17,7 @@ export function useMessages({ conversationId, onNewMessage }: UseMessagesOptions
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const { echo } = useEcho();
+  const { user } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const channelRef = useRef<any>(null);
 
@@ -60,6 +63,15 @@ export function useMessages({ conversationId, onNewMessage }: UseMessagesOptions
         if (prev.find((m) => m.id === event.message.id)) return prev;
         return [...prev, event.message];
       });
+
+      // Trigger Notification sound & Desktop popup if message is from another user
+      if (event.message.user_id !== user?.id) {
+        showDesktopNotification(
+          event.message.user?.name || 'New Message',
+          event.message.body
+        );
+      }
+
       onNewMessage?.(event.message);
       messagesApi.markRead(conversationId).catch(() => {});
     });
@@ -69,7 +81,7 @@ export function useMessages({ conversationId, onNewMessage }: UseMessagesOptions
       echo.leave(`conversation.${conversationId}`);
       channelRef.current = null;
     };
-  }, [echo, conversationId, onNewMessage]);
+  }, [echo, conversationId, user, onNewMessage]);
 
   // Send typing whisper
   const sendTyping = useCallback(() => {

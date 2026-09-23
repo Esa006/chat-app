@@ -26,3 +26,5 @@ backend/storage/framework/views/*
 .DS_Store
 Thumbs.db
 *.log
+chat_app_demo_full.mp4
+chat_app_demo_full.gif

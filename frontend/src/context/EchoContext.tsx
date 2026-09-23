@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 import { useAuth } from './AuthContext';
@@ -14,18 +14,18 @@ const EchoContext = createContext<EchoContextValue>({ echo: null });
 
 export function EchoProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
-  const echoRef = useRef<Echo<'reverb'> | null>(null);
+  const [echo, setEcho] = useState<Echo<'reverb'> | null>(null);
 
   useEffect(() => {
     if (!token) {
-      if (echoRef.current) {
-        echoRef.current.disconnect();
-        echoRef.current = null;
-      }
+      setEcho((prevEcho) => {
+        if (prevEcho) prevEcho.disconnect();
+        return null;
+      });
       return;
     }
 
-    echoRef.current = new Echo({
+    const instance = new Echo({
       broadcaster: 'reverb',
       key: import.meta.env.VITE_REVERB_APP_KEY || 'chat-key',
       wsHost: import.meta.env.VITE_REVERB_HOST || '127.0.0.1',
@@ -42,14 +42,16 @@ export function EchoProvider({ children }: { children: React.ReactNode }) {
       },
     });
 
+    setEcho(instance);
+
     return () => {
-      echoRef.current?.disconnect();
-      echoRef.current = null;
+      instance.disconnect();
+      setEcho(null);
     };
   }, [token]);
 
   return (
-    <EchoContext.Provider value={{ echo: echoRef.current }}>
+    <EchoContext.Provider value={{ echo }}>
       {children}
     </EchoContext.Provider>
   );

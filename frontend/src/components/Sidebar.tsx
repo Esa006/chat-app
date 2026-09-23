@@ -4,6 +4,7 @@ import type { Conversation, User } from '../types';
 import { usersApi, conversationsApi } from '../api/conversations';
 import { ConversationItem } from './ConversationItem';
 import { useAuth } from '../context/AuthContext';
+import { requestNotificationPermission, playNotificationSound } from '../utils/notifications';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -66,6 +67,17 @@ export function Sidebar({
           <span className="brand-name">ChatFlow</span>
         </div>
         <div className="sidebar-actions">
+          <button
+            className="icon-btn"
+            title="Enable Notifications & Test Sound"
+            onClick={async () => {
+              await requestNotificationPermission();
+              playNotificationSound();
+            }}
+            aria-label="Enable notifications"
+          >
+            <i className="bi bi-bell-fill" />
+          </button>
           <button
             id="new-chat-btn"
             className="icon-btn"
